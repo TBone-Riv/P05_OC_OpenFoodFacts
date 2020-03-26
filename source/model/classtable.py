@@ -13,6 +13,7 @@ class Nova(enum.Enum):
     two = 2
     three = 3
     four = 4
+    unknown = 10
 
 
 class NutriScore(enum.Enum):
@@ -21,6 +22,7 @@ class NutriScore(enum.Enum):
     C = 'C'
     D = 'D'
     E = 'E'
+    unknown = 'UK'
 
 
 class Product(Base):

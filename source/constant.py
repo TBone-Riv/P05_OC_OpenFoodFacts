@@ -83,3 +83,7 @@ PREF = {
 
 # Seize sample
 SEIZE_SAMPLE = 200
+
+# Engine dbase
+ENGINE = 'mysql://root:vi19sa96&*Mysql@localhost:3305'
+DBASE = 'OpenFoodFact'

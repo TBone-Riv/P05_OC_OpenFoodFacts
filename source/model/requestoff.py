@@ -23,7 +23,7 @@ class Request:
                   "tag_contains_1": "contains",
                   "tag_1": category,
                   "sort_by": "unique_scans_n",
-                  "page_size": seize,
+                  "page_size": seize if seize != 1 else 2,
                   "json": 1}
 
         res = get(url, params=params)
@@ -32,7 +32,7 @@ class Request:
             raise ConnectionError()
 
         products = res.json()["products"]
-        return products
+        return products if seize != 1 else products[:1]
 
     def getproducts(self, pref):
         """Retrieve products based on category weight"""
@@ -41,9 +41,9 @@ class Request:
 
         allproducts = []
 
-        for category, weight in categories_weight.item():
-            allproducts += self.searchrequest(category, weight)
-
+        for category in categories_weight:
+            res = self.searchrequest(category, categories_weight[category])
+            allproducts.extend(res)
         return allproducts
 
     @staticmethod
@@ -115,6 +115,3 @@ class Request:
                 categories[name] = weight
 
         return categories
-
-
-print(Request().categories_by_popularity())
