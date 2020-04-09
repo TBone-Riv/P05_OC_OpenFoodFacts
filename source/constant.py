@@ -1,13 +1,12 @@
 # Default preference
 
 PREF = {
-    'product equal value': 66,
-    'value weight': {
-        'nova': 1,
-        'nutri-score': 1,
-        'labels': 1,
-        'origins': 1
-    },
+    'equal product': 0.9,
+    'score weight': [
+        'nutriscore',
+        'labelscore',
+        'nova'
+    ],
     'categories weight': {
         'Plant-based foods and beverages': 22,
         'Plant-based foods': 19,
@@ -87,3 +86,9 @@ SEIZE_SAMPLE = 200
 # Engine dbase
 ENGINE = 'mysql://root:vi19sa96&*Mysql@localhost:3305'
 DBASE = 'OpenFoodFact'
+
+bgcolor = '#d9d9d9'  # X11 color: 'gray85'
+fgcolor = '#000000'  # X11 color: 'black'
+compcolor = '#d9d9d9' # X11 color: 'gray85'
+ana1color = '#d9d9d9' # X11 color: 'gray85'
+ana2color = '#ececec' # Closest X11 color: 'gray92'
