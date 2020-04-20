@@ -7,7 +7,7 @@ from sqlalchemy import Column, Integer, String, Enum, JSON, ForeignKey
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, text
 
 import source.constant as constant
 
@@ -43,8 +43,10 @@ class Product(Base):
     nutriscore = Column('nutriscore', Enum(NutriScore))
     labelscore = Column('labelscore', Integer)
     ingredient = Column('ingredient', JSON)
+    stores = Column('stores', String(500))
 
-    def __init__(self, name, brand='', nova=10, nutriscore='UK', ingredient={}, categories=[], labels=[], origins=[], stores=[]):
+    def __init__(self, name, brand='', nova=10, nutriscore='UK', ingredient={},
+                 categories=[], labels=[], origins=[], stores=''):
 
         super().__init__()
 
@@ -161,48 +163,99 @@ class ProductStores(Base):
                       ForeignKey('store.store_id'), primary_key=True)
 
 
+class RequestDBase:
 
-class Substitute:
-    """ Find a subtitute """
+    @staticmethod
+    def get_products(page, engine, order=None,  search=None):
+        """ Get products """
 
-    engine = create_engine(constant.ENGINE)
-    engine.execute("USE " + constant.DBASE)
+        index = 0 + 10 * (page - 1)
 
-    def find(self, product_id):
-        """ Take a product id and return a list of 'similar' product """
+        query = "SELECT * FROM product"
 
-        # get product categories
-        query = select([ProductCategories.category_id]).where(ProductCategories.product_id == product_id)
-        categories = tuple(c[0] for c in self.engine.execute(query))
+        if search:
+            query = query + " WHERE name LIKE {}".format("'%"+search+"%'")
 
-        # keep the number of category from the original
-        count = len(categories)
+        if order:
+            query = query + " ORDER BY " + order
 
-        # get product w/ a category in list from original product and count how many category it have in common
-        query = "SELECT product_id, COUNT(*) FROM product_categories WHERE category_id IN " \
-                + str(categories) \
-                + "AND product_id != {}".format(product_id) \
-                + " GROUP BY product_id"
+        query += " LIMIT {}, {}".format(index, 10)
 
-        # keep product w/  x% category w/ x stock in pref
-        products = tuple(prod[0] for prod in self.engine.execute(query) if prod[1] == count)
-        print(products,len(products))
-
-        query = "SELECT * FROM product WHERE product_id " \
-                + ("IN " + str(products) if len(products) > 1 else
-                   "= {}".format(products[0]))\
-                + " ORDER BY " \
-                + ' ,'.join(constant.PREF['score weight'])
-                # Last str sort product by value
-
-        products = [c for c in self.engine.execute(query)]
+        products = [i for i in engine.execute(text(query))]
 
         return products
 
-    def save(self, product_id, association_id):
+    @staticmethod
+    def get_similar(product_id, engine):
+        """ Take a product id and return a list of 'similar' product """
+
+        # get product categories
+        query = select([ProductCategories.category_id]).\
+            where(ProductCategories.product_id == product_id)
+        categories = tuple(c[0] for c in engine.execute(query))
+
+        # keep the number of category from the original for compareson
+        count = len(categories)
+
+        # get product w/ a category in list from original product
+        # and count how many category it have in common
+        query = "SELECT product_id, COUNT(*) AS nb_commune_category " \
+                + "FROM product_categories " \
+                + "WHERE category_id IN " + str(categories) \
+                + "AND product_id != {} ".format(product_id) \
+                + "GROUP BY product_id " \
+                + "HAVING nb_commune_category = {} ".format(count)
+        # keep product w/  x% category w/ x stock in pref
+
+        products = tuple(prod[0] for prod in engine.execute(query))
+
+        if products:
+            query = "SELECT * FROM product WHERE product_id " \
+                    + ("IN " + str(products) if len(products) > 1 else
+                       "= {}".format(products[0])) \
+                    + " ORDER BY " \
+                    + ' ,'.join(constant.PREF['score weight'])
+            # Last str sort product by value
+
+            query += " LIMIT 5"
+
+            products = [c for c in engine.execute(query)]
+        else:
+            products = []
+
+        return products
+
+    @staticmethod
+    def get_save_substitute(page, engine, order=None):
+        """ Get saved substitute """
+
+        index = 0 + 10 * (page - 1)
+
+        query = "SELECT product.name, association.name " + \
+                "FROM product_association " \
+                "JOIN product " + \
+                "ON product.product_id = product_association.product_id " + \
+                "JOIN product AS association " + \
+                "ON association.product_id = " + \
+                "product_association.association_id"
+
+        if order:
+            query = query + " ORDER BY " + order
+
+        query = query + " LIMIT {}, {}".format(index, index + 10)
+
+        substitutes = [i for i in engine.execute(query)]
+
+        return substitutes
+
+
+class OperationDBase:
+
+    @staticmethod
+    def save(product_id, association_id, engine):
         """ Save the selected association """
 
-        Session = sessionmaker(bind=self.engine)
+        Session = sessionmaker(bind=engine)
 
         session = Session()
 

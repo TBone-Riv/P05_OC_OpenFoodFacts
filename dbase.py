@@ -25,22 +25,22 @@ class Dbase:
         # create table
         model.Base.metadata.create_all(bind=self.engine)
 
-    def filldb(self):
+    def fill_dbase(self):
         """ Fill data base """
 
         # fill table 'category'
-        self.fillCategory()
+        # self.fill_category()
 
         pref = constant.PREF
 
         # get products
-        products = client.Request().getproducts(pref)
+        products = client.Request().get_products()
 
         # fill table 'product'
         for product in products:
-            self.insertProduct(product)
+            self.insert_product(product)
 
-    def fillCategory(self):
+    def fill_category(self):
         """ Fill table category """
 
         # get categories
@@ -48,40 +48,33 @@ class Dbase:
 
         # insert category
         for category, weight in categories.items():
-            self.insertCategory(category, weight)
+            self.insert_category(category, weight)
 
-    def insertProduct(self, productdict):
+    def insert_product(self, productdict):
         """ Insert product in product table """
 
         Session = sessionmaker(bind=self.engine)
 
         session = Session()
 
-        name = productdict['generic_name']\
-            if 'product_name' in productdict else 'unknown'
-        brand = productdict['brands']\
-            if 'brands' in productdict else ''
-        nova = int(productdict['nova_group'])\
-            if 'nova_group' in productdict else 10
-        nutriscore = productdict['nutriscore_grade'].upper()\
-            if 'nutriscore_grade' in productdict else 'UK'
-        categories = productdict['categories_tags']\
-            if 'categories_tags' in productdict else []
-        labels = productdict['labels_tags']\
-            if 'labels_tags' in productdict else []
-        origins = [],
-        stores = []
+        name = productdict.get('generic_name', 'undefined name')
+        brand = productdict.get('brands', '')
+        nova = int(productdict.get('nova_group', 10))
+        nutriscore = productdict.get('nutriscore_grade', 'UK').upper()
+        categories = productdict.get('categories_tags', [])
+        labels = productdict.get('labels_tags', [])
+        stores = productdict.get('stores', '')
 
         # create product instance
         product = model.Product(
-            name=name.encode("utf-8"),
-            brand=brand.encode("utf-8"),
+            name=name,
+            brand=brand,
             nova=nova,
             nutriscore=nutriscore,
             categories=[i.encode("utf-8") for i in categories],
             labels=[i.encode("utf-8") for i in labels],
             origins=[],
-            stores=[]
+            stores=stores
         )
 
         # not added if name not unique
@@ -102,29 +95,31 @@ class Dbase:
             for category in product.categories:
 
                 # SELECT to check if category is in the table
-                query = select([model.Category]).where(model.Category.category_id == category)
+                query = select([model.Category]).\
+                    where(model.Category.category_id == category)
                 row = [i for i in self.engine.execute(query)]
 
                 # if not in we insert it
                 if not row:
-                    self.insertCategory(category, 1)
+                    self.insert_category(category, 1)
 
                 # insert in many to many relation table
-                self.relationCategoty(product_id, category)
+                self.relation_categoty(product_id, category)
 
             # fill label table if label not in, fill relation table
             for label in product.labels:
 
                 # SELECT to check if label is in the table
-                query = select([model.Label]).where(model.Label.label_id == label)
+                query = select([model.Label]).\
+                    where(model.Label.label_id == label)
                 row = [i for i in self.engine.execute(query)]
 
                 # if not in we insert it
                 if not row:
-                    self.insertLabel(label, 1)
+                    self.insert_label(label, 1)
 
                 # insert in many to many relation table
-                self.relationLabel(product_id, label)
+                self.relation_label(product_id, label)
 
             # update label score
             product.LabelScore()
@@ -133,7 +128,7 @@ class Dbase:
                 values(labelscore=product.labelscore)
             self.engine.execute(query)
 
-    def insertCategory(self, category_id, weight):
+    def insert_category(self, category_id, weight):
         """ Insert category in category table """
 
         Session = sessionmaker(bind=self.engine)
@@ -141,8 +136,8 @@ class Dbase:
         session = Session()
 
         category = model.Category()
-        category.category_id = category_id.encode("utf-8")
-        category.category_name = category_id.split(':')[-1].encode("utf-8")
+        category.category_id = category_id
+
         category.weight = weight
 
         session.add(category)
@@ -150,7 +145,7 @@ class Dbase:
 
         session.close()
 
-    def relationCategoty(self, product_id, category_id):
+    def relation_categoty(self, product_id, category_id):
         Session = sessionmaker(bind=self.engine)
 
         session = Session()
@@ -164,7 +159,7 @@ class Dbase:
 
         session.close()
 
-    def insertLabel(self, label_id, weight):
+    def insert_label(self, label_id, weight):
         Session = sessionmaker(bind=self.engine)
 
         session = Session()
@@ -179,7 +174,7 @@ class Dbase:
 
         session.close()
 
-    def relationLabel(self, product_id, label_id):
+    def relation_label(self, product_id, label_id):
         Session = sessionmaker(bind=self.engine)
 
         session = Session()
@@ -198,4 +193,4 @@ class Dbase:
 
 
 if __name__ == '__main__':
-    Dbase().filldb()
+    Dbase().fill_dbase()

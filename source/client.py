@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 # coding: utf-8
-"""Make use of library requests.py to get the list of products from Open Food Fact"""
+"""Make use of library requests.py
+to get the list of products from Open Food Fact"""
 
 from requests import get
 
@@ -9,8 +10,9 @@ class Request:
     """ Handle request to API OFF"""
 
     @staticmethod
-    def searchrequest(category, seize):
-        """Retrieve data of many products using a Search Requests"""
+    def search_request(category, seize):
+        """Retrieve data of many products using a Search Requests
+        using categories """
 
         url = "https://world.openfoodfacts.org/cgi/search.pl?"
         params = {"action": "process",
@@ -32,17 +34,48 @@ class Request:
         products = res.json()["products"]
         return products if seize != 1 else products[:1]
 
-    def getproducts(self, pref):
-        """Retrieve products based on category weight"""
+    @staticmethod
+    def base_request():
+        """Retrieve data of many products using a Search Requests"""
 
-        categories_weight = pref['categories weight']
+        url = "https://fr.openfoodfacts.org/cgi/search.pl?"
+        params = {"action": "process",
+                  "tagtype_0": "purchase_places",
+                  "tag_contains_0": "contains",
+                  "tag_0": "france",
+                  "sort_by": "unique_scans_n",
+                  "page_size": 1000,
+                  "json": 1}
+
+        res = get(url, params=params)
+
+        if res.status_code != 200:
+            raise ConnectionError()
+
+        products = res.json()["products"]
+        return products
+
+    def get_products(self):
+        """Retrieve products based on category weight"""
 
         allproducts = []
 
-        for category in categories_weight:
-            res = self.searchrequest(category, categories_weight[category])
+        for _ in range(10):
+            res = self.base_request()
             allproducts.extend(res)
         return allproducts
+
+    # def getproducts(self, pref):
+    #    """Retrieve products based on category weight"""
+
+    #    categories_weight = pref['categories weight']
+
+    #    allproducts = []
+
+    #    for category in categories_weight:
+    #        res = self.search_request(category, categories_weight[category])
+    #        allproducts.extend(res)
+    #    return allproducts
 
     @staticmethod
     def categories():

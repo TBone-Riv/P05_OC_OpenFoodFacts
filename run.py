@@ -1,3 +1,7 @@
-from source.view import create_windows
+from source.controller import Controller
 
-create_windows()
+if __name__ == '__main__':
+    controller = Controller()
+    controller.init_engine()
+    controller.init_window()
+    controller.load_main_page()

@@ -84,11 +84,14 @@ PREF = {
 SEIZE_SAMPLE = 200
 
 # Engine dbase
-ENGINE = 'mysql://root:vi19sa96&*Mysql@localhost:3305'
+user = 'root'
+password = 'vi19sa96&*'
+port = '3305'
+ENGINE = 'mysql://' + user + ':' + password + 'Mysql@localhost:' + port
 DBASE = 'OpenFoodFact'
 
 bgcolor = '#d9d9d9'  # X11 color: 'gray85'
 fgcolor = '#000000'  # X11 color: 'black'
-compcolor = '#d9d9d9' # X11 color: 'gray85'
-ana1color = '#d9d9d9' # X11 color: 'gray85'
-ana2color = '#ececec' # Closest X11 color: 'gray92'
+compcolor = '#d9d9d9'  # X11 color: 'gray85'
+ana1color = '#d9d9d9'  # X11 color: 'gray85'
+ana2color = '#ececec'  # Closest X11 color: 'gray92'
